@@ -74,7 +74,7 @@ function p = load_device_profile(type)
   	    p.Eoss = 4.218e-6;
             % Drive logic
             p.V_dr_on   = 10;       % V
-            p.V_dr_off  = -5;       % V, design choice
+            p.V_dr_off  = 0;       % V, design choice
             p.V_gs_th   = 3;      % V, max threshold
             p.V_plateau = 5;      % V, engineering estimate
 
