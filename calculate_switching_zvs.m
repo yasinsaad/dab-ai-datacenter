@@ -111,12 +111,14 @@ function [P_sw_total, is_zvs, t_trans_needed, E_ratio] = calculate_switching_zvs
     
     %  Voltage Rise Time (t_RV): Charging C_rss (Miller Cap) from Plateau to Off.
     denom_rv = abs(s.V_plateau - s.V_dr_off);
-    t_RV = (s.Rg * s.Crss * V_DC) / max(denom_rv, 1e-3);
+    %t_RV = (s.Rg * s.Crss * V_DC) / max(denom_rv, 1e-3);
     
     %  Current Fall Time (t_FI): Discharging C_iss from Plateau to Threshold.
     term_start = abs(s.V_dr_off - s.V_plateau);
     term_end   = abs(s.V_dr_off - s.V_gs_th);
-    t_FI = s.Rg * s.Ciss * log(max(term_start, 1e-3) / max(term_end, 1e-3));
+    %t_FI = s.Rg * s.Ciss * log(max(term_start, 1e-3) / max(term_end, 1e-3));
+    t_FI = s.t_FI;
+    t_RV = s.t_RV;
     
     %  [Eq. 36] Turn-OFF Energy (E_off): Overlap of rising V and falling I.
     E_off = (V_DC * I_sw / 2) * (t_RV + t_FI);

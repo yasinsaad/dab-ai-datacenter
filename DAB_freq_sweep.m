@@ -6,7 +6,7 @@ clear; clc; close all;
 model_name = 'DAB_freq_sweep_sim'; 
 power.target = 25000;              % 25 kW Nominal
 headroom_factor = 1.3;             % Design for 30 kW Peak
-freq_steps = (10:10:120) * 1e3;    % Frequency Sweep (10kHz to 180kHz)
+freq_steps = (40:150) * 1e3;    % Frequency Sweep (40kHz to 150kHz)
 num_sweep = length(freq_steps);
 sim_time = 0.3;
 max_power = headroom_factor*power.target;
@@ -14,7 +14,7 @@ max_power = headroom_factor*power.target;
 
 
 % B. Load Semiconductor Profiles (Embedded Local Function)
-[semi.hv, semi.lv] = get_semiconductor_params('SiC_1200V', 'Si_60V');
+[semi.hv, semi.lv] = get_semiconductor_params('SiC_1200V', 'Si');
 
 %dead time incorporated in get_semiconductor_params
 
@@ -80,9 +80,9 @@ results.I_sw_ss_l = zeros(1, num_sweep);
 results.t_req_h = zeros(1, num_sweep);    % Required Transition Time
 results.t_req_l = zeros(1, num_sweep);
 % --- Magnetic Sizing Data ---
-results.Vol_L = zeros(1, num_sweep);      % Inductor Volume
-results.Vol_T = zeros(1, num_sweep);      % Transformer Volume
-results.Vol_Total = zeros(1, num_sweep);  % Total Volume
+results.Volume_L = zeros(1, num_sweep);      % Inductor Volume
+results.Volume_Trans = zeros(1, num_sweep);      % Transformer Volume
+results.Volume_Total = zeros(1, num_sweep);  % Total Volume
 %Body diode losses
 data_loss_body = zeros(1, num_sweep);
 data_loss_body_h = zeros(1, num_sweep);
@@ -153,9 +153,7 @@ for i = 1:num_sweep
     I_sw_ss_h = max(abs(I_ss_h)); 
     I_sw_ss_l = max(abs(I_ss_l)); 
     
-    % Global Peaks (Transient) % not needed actually
-    I_peak_h_global = max(abs(I_raw_h));
-    I_peak_l_global = max(abs(I_raw_l));
+    
     
     % --- 1. Conduction & Passive Losses ---
     power.loss.conduction = 4*(I_rms_h^2 * semi.hv.Ron) + 4*(I_rms_l^2 * semi.lv.Ron);
@@ -222,19 +220,7 @@ results.Lk(i) = inductor.Lk;  % Store leakage inductance
     results.t_req_h(i) = t_req_h;
     results.t_req_l(i) = t_req_l;
 
-    % --- Calculate Magnetic Size ---
-    % Conversion: Phase(rad) = Delay(ratio) * pi or Delay(sec) * 2*pi*f
-    % Assuming 'Delay_Sweep' from findDABDelay is in SECONDS:
-%     phase_rad = Delay_Sweep * 2 * pi * f_sw_curr;
-%     
-%     [v_L, v_T, v_tot, ~] = dab_size_calc(f_sw_curr, source.Vin, source.Vin, ...
-%                                          power.target, trans.n, phase_rad, I_peak_h_global); 
-%% @sahib @saquib, this fcn needs to be reworked. We are using a closed loop control, hence no delay param. Also Lk is already calculated, why recalculate it?
-%                                      
-%     results.Vol_L(i) = v_L * 1e6;     % Convert m^3 to cm^3 for easier reading
-%     results.Vol_T(i) = v_T * 1e6;     % Convert m^3 to cm^3
-%     results.Vol_Total(i) = v_tot * 1e6;
-%     
+[results.Volume_L(i), results.Volume_T(i), results.Volume_Total(i),~] = dab_size_calc(f_sw_curr, source.Vin, inductor.Lk, max(I_ss_h));
     fprintf('%.1f kHz | Lk:%.1fuH | I_sw: %.1fA | Eff: %.2f%% | ZVS: H:%d L:%d\n', ...
        f_sw_curr/1e3, inductor.Lk/1e-6, I_sw_ss_l, results.eff_analytical(i), zvs_h, zvs_l);
     
@@ -288,4 +274,68 @@ ylabel('Loss (W)');
 title('Individual Loss Components vs Frequency');
 legend('Location', 'best');
 grid on;
+
+%% --- 4. MAGNETIC VOLUME VS FREQUENCY ---
+figure('Name', 'Volume vs Frequency', 'Color', 'w');
+hold on;
+plot(freq_kHz, results.Volume_L, '-o', 'LineWidth', 1.5, 'DisplayName', 'Inductor Volume');
+plot(freq_kHz, results.Volume_T, '-s', 'LineWidth', 1.5, 'DisplayName', 'Transformer Volume');
+plot(freq_kHz, results.Volume_Total, '-k^', 'LineWidth', 2, 'DisplayName', 'Total Volume');
+hold off;
+
+xlabel('Frequency (kHz)');
+ylabel('Volume'); % Adjust units if necessary (e.g., cm^3 or L)
+title('Magnetic Component Volume vs Frequency');
+legend('Location', 'best');
+grid on;
+
+%% --- 5. PARETO FRONT: VOLUME VS EFFICIENCY ---
+% Filter valid design points
+valid_idx = results.Volume_Total > 0;
+vol_data = results.Volume_Total(valid_idx);
+eff_data = results.eff_analytical(valid_idx);
+freq_data = freq_kHz(valid_idx);
+
+if ~isempty(vol_data)
+    % Identify Pareto optimal points (Minimize Volume, Maximize Efficiency)
+    is_pareto = true(size(vol_data));
+    for i = 1:length(vol_data)
+        for j = 1:length(vol_data)
+            if i ~= j
+                if (vol_data(j) <= vol_data(i)) && (eff_data(j) >= eff_data(i)) && ...
+                   ((vol_data(j) < vol_data(i)) || (eff_data(j) > eff_data(i)))
+                    is_pareto(i) = false;
+                    break;
+                end
+            end
+        end
+    end
+    
+    % Sort Pareto points by volume to construct the frontier line
+    pareto_indices = find(is_pareto);
+    [vol_pareto, sort_idx] = sort(vol_data(pareto_indices));
+    eff_pareto = eff_data(pareto_indices(sort_idx));
+
+    figure('Name', 'Pareto Front', 'Color', 'w');
+    hold on;
+    
+    % Scatter all points colored by frequency
+    scatter(vol_data, eff_data, 70, freq_data, 'filled', 'MarkerEdgeColor', 'k');
+    % Connect Pareto points
+    plot(vol_pareto, eff_pareto, 'k--', 'LineWidth', 1.5);
+    
+    cb = colorbar;
+    cb.Label.String = 'Switching Frequency (kHz)';
+    colormap(jet); 
+    
+    xlabel('Total Magnetic Volume');
+    ylabel('Efficiency (%)');
+    title('Pareto Front: Magnetic Sizing vs Efficiency');
+    grid on;
+    hold off;
+else
+    fprintf('Skipping Pareto plot: results.Volume_Total array is empty or zero.\n');
+end
+
+
 save("SiC-Si.mat", "results", "power");

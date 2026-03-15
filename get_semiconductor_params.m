@@ -47,6 +47,9 @@ function p = load_device_profile(type)
             p.diode.Io_ref   = 27;         % A, Table 6 test current
             p.diode.didt_ref = 2000e6;     % A/s = 2000 A/us
 
+            p.t_RV = 7.6e-9;
+            p.t_FI = 8.5e-9;
+
             % Flags
             p.isMOSFET = true;
             p.isGaN    = false;
@@ -83,7 +86,8 @@ function p = load_device_profile(type)
             p.diode.Irm_ref  = 2.7;        % A, typical
             p.diode.Io_ref   = 15;         % A, test current
             p.diode.didt_ref = 100e6;      % A/s = 100 A/us
-
+             p.t_RV = 28.8e-9;
+            p.t_FI = 30.4e-9;
             % Flags
             p.isMOSFET = true;
             p.isGaN    = false;
@@ -128,6 +132,8 @@ function p = load_device_profile(type)
             % Limits
             p.Vds_max = 100;        % V
             p.Id_max  = 606;        % A 101*6
+             p.t_RV = 3.75e-9;
+            p.t_FI = 2.81e-9;
 
             % Flags       
 p.isMOSFET = true; % @saquib, why?
