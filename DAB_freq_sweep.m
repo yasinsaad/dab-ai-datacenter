@@ -6,7 +6,7 @@ clear; clc; close all;
 model_name = 'DAB_freq_sweep_sim'; 
 power.target = 25000;              % 25 kW Nominal
 headroom_factor = 1.3;             % Design for 30 kW Peak
-freq_steps = (40:150) * 1e3;    % Frequency Sweep (40kHz to 150kHz)
+freq_steps = (160:10:280) * 1e3;    % Frequency Sweep (40kHz to 150kHz)
 num_sweep = length(freq_steps);
 sim_time = 0.3;
 max_power = headroom_factor*power.target;
@@ -14,7 +14,7 @@ max_power = headroom_factor*power.target;
 
 
 % B. Load Semiconductor Profiles (Embedded Local Function)
-[semi.hv, semi.lv] = get_semiconductor_params('SiC_1200V', 'Si');
+[semi.hv, semi.lv] = get_semiconductor_params('SiC_1200V', 'GaN');
 
 %dead time incorporated in get_semiconductor_params
 
@@ -239,25 +239,26 @@ end
 
 %% --- 4. PLOTTING RESULTS ---
 % Convert frequency to kHz for readability
-freq_kHz = results.freq / 1e3;
+freq_kHz = results.freq / 1e3; 
 
 % Plot 1: Efficiency vs Frequency
 figure('Name', 'Efficiency vs Frequency', 'Color', 'w');
 plot(freq_kHz, results.eff_analytical, '-o', 'LineWidth', 2);
-xlabel('Frequency (kHz)');
+xlabel('Frequency (kHz)'); xlim tight;
 ylabel('Efficiency (%)');
 title('Efficiency vs Frequency');
 grid on;
 
-% Plot 2: Total Loss vs Frequency
+%% Plot 2: Total Loss vs Frequency
 figure('Name', 'Total Loss vs Frequency', 'Color', 'w');
-plot(freq_kHz, results.loss_total, '-o', 'LineWidth', 2, 'Color', '#D95319');
-xlabel('Frequency (kHz)');
+plot(freq_kHz, results.loss_total, '-o', 'LineWidth', 2, 'Color', '#D95319', 'DisplayName', "SiC-GaN");
+xlabel('Frequency (kHz)'); xlim tight;
 ylabel('Total Loss (W)');
 title('Total System Loss vs Frequency');
 grid on;
+hold on;
 
-% Plot 3: Individual Losses vs Frequency
+%% Plot 3: Individual Losses vs Frequency
 figure('Name', 'Loss Breakdown vs Frequency', 'Color', 'w');
 hold on;
 plot(freq_kHz, results.breakdown(1, :), '-x', 'LineWidth', 1.5, 'DisplayName', 'Conduction Loss');
@@ -269,13 +270,13 @@ plot(freq_kHz, results.breakdown(7, :), '-x', 'LineWidth', 1.5, 'DisplayName', '
 plot(freq_kHz, results.breakdown(6, :), '-x', 'LineWidth', 1.5, 'DisplayName', 'Transformer Loss');
 hold off;
 
-xlabel('Frequency (kHz)');
+xlabel('Frequency (kHz)'); xlim tight;
 ylabel('Loss (W)');
 title('Individual Loss Components vs Frequency');
 legend('Location', 'best');
 grid on;
 
-%% --- 4. MAGNETIC VOLUME VS FREQUENCY ---
+% --- 4. MAGNETIC VOLUME VS FREQUENCY ---
 figure('Name', 'Volume vs Frequency', 'Color', 'w');
 hold on;
 plot(freq_kHz, results.Volume_L, '-o', 'LineWidth', 1.5, 'DisplayName', 'Inductor Volume');
@@ -283,13 +284,13 @@ plot(freq_kHz, results.Volume_T, '-s', 'LineWidth', 1.5, 'DisplayName', 'Transfo
 plot(freq_kHz, results.Volume_Total, '-k^', 'LineWidth', 2, 'DisplayName', 'Total Volume');
 hold off;
 
-xlabel('Frequency (kHz)');
+xlabel('Frequency (kHz)'); xlim tight;
 ylabel('Volume'); % Adjust units if necessary (e.g., cm^3 or L)
 title('Magnetic Component Volume vs Frequency');
 legend('Location', 'best');
 grid on;
 
-%% --- 5. PARETO FRONT: VOLUME VS EFFICIENCY ---
+% --- 5. PARETO FRONT: VOLUME VS EFFICIENCY ---
 % Filter valid design points
 valid_idx = results.Volume_Total > 0;
 vol_data = results.Volume_Total(valid_idx);
@@ -322,7 +323,7 @@ if ~isempty(vol_data)
     % Scatter all points colored by frequency
     scatter(vol_data, eff_data, 70, freq_data, 'filled', 'MarkerEdgeColor', 'k');
     % Connect Pareto points
-    plot(vol_pareto, eff_pareto, 'k--', 'LineWidth', 1.5);
+    %plot(vol_pareto, eff_pareto, 'k--', 'LineWidth', 1.5);
     
     cb = colorbar;
     cb.Label.String = 'Switching Frequency (kHz)';
@@ -337,5 +338,3 @@ else
     fprintf('Skipping Pareto plot: results.Volume_Total array is empty or zero.\n');
 end
 
-
-save("SiC-Si.mat", "results", "power");
