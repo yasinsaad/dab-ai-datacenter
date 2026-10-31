@@ -7,6 +7,7 @@
 % Plots every design point colored by switching frequency, and draws the
 % Pareto front (minimum volume, maximum efficiency) for each device pair.
 % Volume is converted from m^3 to cm^3.
+% Not used in the TENCON paper (Fig. 6 comes from plot_comparison.m).
 %
 % Renamed from pareto.m: that name shadowed MATLAB's built-in pareto().
 

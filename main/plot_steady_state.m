@@ -8,8 +8,8 @@
 %   v_out_80, i_out_80   output voltage [V] / current [A]
 % The "_80" suffix marks the steady-state window (after 80 % of the run).
 %
-% Output: results/figures/steady_state/SteadyState_SiCGaN140.pdf
-% (vector PDF, sized for an IEEE paper).
+% Output: results/figures/paper/fig7_steady_state_SiC-GaN_140kHz.pdf
+% (Fig. 7 of the TENCON paper).
 %
 % Note: the set(groot, ...) calls change plot defaults for the whole
 % MATLAB session.
@@ -89,4 +89,4 @@ linkaxes([ax1, ax2, ax3, ax4, ax5, ax6], 'x');
 % Overall Title (Optional: You may want to remove this and use the LaTeX caption instead to save space)
 title(t, 'SiC-GaN Waveforms (140 kHz)', 'FontName', 'Times New Roman', 'FontWeight', 'bold', 'FontSize', 10);
 % Export as a vector PDF
-exportgraphics(gcf, fullfile(repo_root, 'results', 'figures', 'steady_state', 'SteadyState_SiCGaN140.pdf'), 'ContentType', 'vector');
+exportgraphics(gcf, fullfile(repo_root, 'results', 'figures', 'paper', 'fig7_steady_state_SiC-GaN_140kHz.pdf'), 'ContentType', 'vector');

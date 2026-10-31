@@ -1,7 +1,7 @@
 function savefigs(outDir)
 % SAVEFIGS  Export every open figure to a vector PDF named after its title.
 %
-%   savefigs()        saves to results/figures/SiC-GaN/
+%   savefigs()        saves to results/figures/
 %   savefigs(outDir)  saves to outDir (created if missing)
 %
 %   File name = axes title with spaces replaced by '_' and characters
@@ -10,7 +10,7 @@ function savefigs(outDir)
 
     if nargin < 1 || isempty(outDir)
         repo_root = fileparts(fileparts(mfilename('fullpath')));
-        outDir = fullfile(repo_root, 'results', 'figures', 'SiC-GaN');
+        outDir = fullfile(repo_root, 'results', 'figures');
     end
     if ~exist(outDir, 'dir')
         mkdir(outDir);

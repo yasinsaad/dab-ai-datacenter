@@ -5,8 +5,10 @@
 %   results2 : SiC-GaN sweep   (results/data/SiC-GaN_sweep_40-250kHz.mat)
 % Each is a `results` struct saved by main/DAB_freq_sweep.m.
 %
-% Produces 5 figures: efficiency, total loss, loss breakdown, magnetic
-% volume, and volume-efficiency scatter. Save them with savefigs.
+% Produces 5 figures: efficiency (Fig. 2 of the TENCON paper), total loss
+% (Fig. 3), combined loss breakdown (not in the paper; Fig. 4 comes from
+% plot_sweep_results.m), magnetic volume (Fig. 5), and volume-efficiency
+% scatter (Fig. 6). Save them with savefigs.
 %
 % Note: the set(groot, ...) calls change plot defaults for the whole
 % MATLAB session.

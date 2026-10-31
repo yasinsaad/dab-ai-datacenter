@@ -1,60 +1,45 @@
 %% MERGE_RESULTS  Join sweep results from several runs into one `results` struct.
 %
-% Use when one frequency range was swept in several runs.
+% Use when a frequency sweep was split over several runs (for example,
+% to keep each Simulink session short).
 %
-% Workspace inputs (not in the repo; load your partial runs first):
-%   results40_150, results160_220, results230_250
-%       `results` structs from main/DAB_freq_sweep.m with the same fields.
+% Edit run_names below to list the `results` structs from each run,
+% load them into the workspace, then run this script.
 %
 % Steps:
-%   1. Concatenate every field in run order.
-%   2. Drop the unused fields eff_worst_case and Volume_Trans.
-%   3. Remove points with freq == 0 (failed or skipped simulations).
+%   1. Concatenate every per-frequency field (row vectors and the 7xN
+%      breakdown matrix) in run order.
+%   2. Remove points with freq == 0 (simulation crashed or was skipped).
+%   3. Sort all fields by frequency.
+%   4. Drop fields that older sweep versions created but never filled
+%      (eff_worst_case, Volume_Trans).
 %
 % Output: `results` in the workspace. Save it to results/data/.
-%
-% Limitation: the breakdown cleanup assumes 31 merged points in total
-% (`mask = 1:31`). Change it if the runs cover a different number of
-% frequencies.
 
+run_names = {'results40_150', 'results160_220', 'results230_250'};
 
+runs = cellfun(@(name) evalin('base', name), run_names, 'UniformOutput', false);
+fields = fieldnames(runs{1});
+
+% 1. Concatenate along columns (one column per frequency point)
 results = struct();
-fields = fieldnames(results40_150);
-
-% 1. Concatenate all data into a single struct
-for i = 1:length(fields)
-    fieldName = fields{i};
-    
-    % Fields are row vectors (breakdown is 7xN), so concatenate along columns.
-    results.(fieldName) = [results40_150.(fieldName),results160_220.(fieldName), results230_250.(fieldName)]
+for i = 1:numel(fields)
+    parts = cellfun(@(r) r.(fields{i}), runs, 'UniformOutput', false);
+    results.(fields{i}) = [parts{:}];
 end
 
-%% 2. Remove unused fields and failed points
-% (Sorting by frequency is disabled; runs are concatenated in order.)
-%mergedresults.freq = mergedresults.freq(mergedresults.freq~= 0);
-%[mergedresults.freq, sortIdx] = sort(mergedresults.freq);
-results = rmfield(results,'eff_worst_case' )
-results = rmfield(results,'Volume_Trans' )
-fields = fieldnames(results);
-non0 = (results.freq ~=0)
-% 3. Keep only points with freq ~= 0 in every field
-for i = 1:length(fields)
-    fieldName = fields{i}
-    
-    % Volume_T is skipped (left unfiltered); breakdown is 7xN, so its
-    % zero-frequency columns are deleted one by one from the end.
-    if strcmp(fieldName, 'Volume_T')
-        continue
-    elseif ~strcmp(fieldName, 'breakdown') 
-        results.(fieldName) = results.(fieldName)(non0);
-    else 
-        mask = 1:31;
-        mask = mask(~non0);
-        
-        for k= flip(mask)
-            
-            results.breakdown(:,k) = []
-        end
-        
+% 2-3. Keep valid points, sorted by frequency
+[~, order] = sort(results.freq);
+order = order(results.freq(order) ~= 0);
+n_total = numel(results.freq);
+for i = 1:numel(fields)
+    if size(results.(fields{i}), 2) == n_total
+        results.(fields{i}) = results.(fields{i})(:, order);
     end
 end
+
+% 4. Remove unused legacy fields
+legacy = intersect(fieldnames(results), {'eff_worst_case', 'Volume_Trans'});
+results = rmfield(results, legacy);
+
+clear runs fields parts order n_total legacy i

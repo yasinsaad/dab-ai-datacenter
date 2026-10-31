@@ -26,32 +26,39 @@ run('path/to/dab_codes/main/DAB_freq_sweep.m')
 
 Each script in `main/` adds the repo folders to the path on its own. If you run single sections (Ctrl+Enter) instead of the whole file, run `setup_paths` once from the repo root first.
 
-To plot the saved results without re-simulating:
+## Reproducing the paper figures
 
-```matlab
-run main/plot_comparison.m      % SiC-Si vs SiC-GaN, 5 figures
-run main/plot_pareto_front.m    % volume vs efficiency, both pairs
-run main/plot_steady_state.m    % 140 kHz SiC-GaN waveforms
-savefigs                        % export open figures to results/figures/SiC-GaN/
-savefigs('results/figures/merged')   % or any other folder
-```
+All paper figures can be regenerated from the saved data in `results/data/`, without re-simulating. Run `setup_paths` once from the repo root, then:
 
-The plot scripts load data from `results/data/` unless the expected variables already exist in the workspace.
+| Paper figure | Command | Saved copy in `results/figures/paper/` |
+|---|---|---|
+| Fig. 1, topology | — | `docs/DAB_topology.pdf` |
+| Figs. 2, 3, 5, 6 | `plot_comparison` | `fig2_…`, `fig3_…`, `fig5_…`, `fig6_…` |
+| Fig. 4(a) | `load results/data/SiC-GaN_sweep_40-250kHz.mat`, then `plot_sweep_results` | `fig4a_loss_breakdown_SiC-GaN.pdf` |
+| Fig. 4(b) | `load results/data/SiC-Si_sweep.mat`, then `plot_sweep_results` | `fig4b_loss_breakdown_SiC-Si.pdf` |
+| Fig. 7 | `plot_steady_state` (writes the PDF itself) | `fig7_steady_state_SiC-GaN_140kHz.pdf` |
+
+`plot_comparison`, `plot_pareto_front` and `plot_steady_state` load their data from `results/data/` unless the expected variables already exist in the workspace. `savefigs` exports all open figures to `results/figures/` (or `savefigs(folder)`), named after their titles.
+
+`plot_pareto_front` draws the Pareto front lines for both device pairs. It is not used in the TENCON paper.
 
 ## Workflow
 
 ```
 DAB_freq_sweep.m ──► results (struct) ──► save to results/data/*.mat
         │                                        │
-        │ per frequency:                         ├─► plot_comparison.m
-        │  1. size Lk for 1.3 × 25 kW            ├─► plot_pareto_front.m
-        │  2. simulate (Simulink, closed loop)   └─► merge_results.m (join split runs)
+        │ per frequency:                         ├─► plot_sweep_results.m (one pair)
+        │  1. size Lk for 1.3 × 25 kW            ├─► plot_comparison.m (both pairs)
+        │  2. simulate (Simulink, closed loop)   ├─► plot_pareto_front.m
+        │                                        └─► merge_results.m (join split runs)
         │  3. steady-state currents (last 20 %)
         │  4. loss models + ZVS check
         │  5. magnetic volume
         ▼
-results/current_plots.pdf (output current per frequency)
+results/current_plots.pdf (output current per frequency, to check steady state)
 ```
+
+The default sweep is 40–250 kHz in 10 kHz steps, as in the paper (the paper's SiC-Si data covers 40–150 kHz). Each point simulates 0.3 s. For long sweeps you can split `freq_steps` over several runs, save each run's `results` under a different name, and join them with `merge_results` (edit `run_names` at its top).
 
 To produce a sweep for a different device pair, change this line in `main/DAB_freq_sweep.m`:
 
@@ -65,17 +72,18 @@ Then save the workspace `results` struct to `results/data/`.
 
 ```
 dab_codes/
-├── setup_paths.m                 adds models/, functions/, utils/ to the path
+├── setup_paths.m                 adds main/, models/, functions/, utils/ to the path
 ├── main/                         scripts you run
 │   ├── DAB_freq_sweep.m          frequency sweep: simulation + loss analysis
+│   ├── plot_sweep_results.m      plots for one device pair (called by the sweep)
 │   ├── plot_comparison.m         SiC-Si vs SiC-GaN plots
 │   ├── plot_pareto_front.m       volume-efficiency Pareto fronts
 │   ├── plot_steady_state.m       3x2 steady-state waveform figure
 │   └── merge_results.m           join results from split sweep runs
 ├── models/
 │   ├── DAB_freq_sweep_sim.slx    DAB model used by the sweep
-│   └── DAB_freq_sweep_sim_ver.slx  same model with extra voltage and
-│                                   inductor-current logging
+│   └── DAB_freq_sweep_sim_ver.slx  same circuit with 4 extra voltage/current
+│                                   probes; used for the Fig. 7 waveforms
 ├── functions/
 │   ├── devices/
 │   │   ├── get_semiconductor_params.m      datasheet parameters per device
@@ -91,13 +99,15 @@ dab_codes/
 │   └── savefigs.m                export open figures as vector PDFs
 ├── results/
 │   ├── data/                     saved sweep results (.mat)
-│   └── figures/                  exported plots (SiC-Si/, SiC-GaN/, merged/, steady_state/)
+│   └── figures/paper/            figures used in the paper, named by figure number
 └── docs/
     ├── DAB_AI_Data_Center_paper.pdf   paper (pre-publication version)
     └── DAB_topology.pdf               circuit schematic
 ```
 
 ## Data files
+
+In `results/data/`:
 
 | File | Contents |
 |---|---|
@@ -134,6 +144,4 @@ Main fields of `results` (one entry per frequency):
 
 ## Notes
 
-- `results/current_plots.pdf` is appended to on every run. Delete it before a new sweep.
-- `merge_results.m` assumes 31 merged points (`mask = 1:31`). Edit it for other run splits.
 - The plot scripts call `set(groot, ...)`, which changes plot defaults for the rest of the MATLAB session.
