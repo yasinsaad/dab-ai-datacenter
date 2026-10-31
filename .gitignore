@@ -1,4 +1,5 @@
 *.asv
-/slprj/**
+slprj/
+*.slxc
+results/current_plots.pdf
 current_plots.pdf
-DAB_freq_sweep_sim.slxc

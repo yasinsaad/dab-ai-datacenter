@@ -1,4 +1,22 @@
-function inductor = get_inductor_params(source, trans, f_sw_curr, max_power) 
+function inductor = get_inductor_params(source, trans, f_sw_curr, max_power)
+% GET_INDUCTOR_PARAMS  Series (leakage) inductance Lk and its DC resistance.
+%
+%   inductor = get_inductor_params(source, trans, f_sw_curr, max_power)
+%
+%   Lk is sized so the DAB transfers max_power at 90 deg phase shift
+%   (the SPS maximum):
+%       P_max = Vin * Vout / (8 * n * f_sw * Lk)
+%
+%   Inputs:
+%       source    : struct with Vin, Vout [V]
+%       trans     : struct with n = N2/N1 (turns ratio)
+%       f_sw_curr : switching frequency [Hz]
+%       max_power : design power [W]
+%
+%   Outputs (struct):
+%       inductor.Lk  : series inductance, referred to the primary [H]
+%       inductor.Rdc : DC winding resistance [ohm]
+
     inductor.Lk = (source.Vin * source.Vout) / (8 * trans.n * f_sw_curr * max_power);
     inductor.Rdc = calculate_dab_inductor_rdc(inductor.Lk);
 end

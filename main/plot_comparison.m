@@ -1,3 +1,28 @@
+%% PLOT_COMPARISON  Compare two sweep results (SiC-Si vs SiC-GaN) on shared axes.
+%
+% Workspace inputs (loaded from results/data/ if not already defined):
+%   results1 : SiC-Si sweep    (results/data/SiC-Si_sweep.mat)
+%   results2 : SiC-GaN sweep   (results/data/SiC-GaN_sweep_40-250kHz.mat)
+% Each is a `results` struct saved by main/DAB_freq_sweep.m.
+%
+% Produces 5 figures: efficiency, total loss, loss breakdown, magnetic
+% volume, and volume-efficiency scatter. Save them with savefigs.
+%
+% Note: the set(groot, ...) calls change plot defaults for the whole
+% MATLAB session.
+
+addpath(fullfile(fileparts(mfilename('fullpath')), '..'));
+repo_root = setup_paths();
+if ~exist('results1', 'var')
+    tmp = load(fullfile(repo_root, 'results', 'data', 'SiC-Si_sweep.mat'), 'results');
+    results1 = tmp.results;
+end
+if ~exist('results2', 'var')
+    tmp = load(fullfile(repo_root, 'results', 'data', 'SiC-GaN_sweep_40-250kHz.mat'), 'results');
+    results2 = tmp.results;
+end
+clear tmp
+
 % Global Line Properties
 set(groot, 'defaultLineLineWidth', 1.5);
 
@@ -11,8 +36,7 @@ set(groot, 'defaultFigureColor', 'w');
 % Optional: Default export properties (requires R2020a+)
 set(groot, 'defaultFigurePaperPositionMode', 'auto');
 
-%% --- 4. PLOTTING RESULTS ---
-% Convert frequencies to kHz for readability
+%% Convert frequencies to kHz for readability
 freq1_kHz = results1.freq / 1e3; 
 freq2_kHz = results2.freq / 1e3; 
 
@@ -43,7 +67,9 @@ hold off;
 %% Plot 3: Individual Losses vs Frequency
 figure('Name', 'Loss Breakdown vs Frequency', 'Color', 'w');
 hold on;
-% Define colors so matching components across datasets share the same color
+% Same color per loss component; line style separates the device pairs.
+% Breakdown rows: 1 conduction, 2 cable, 3 gate drive, 4 switching,
+%                 5 body diode, 6 transformer, 7 inductor DC
 c = lines(7); 
 
 % SiC-Si (Solid lines, 'x' marker)
@@ -71,7 +97,7 @@ legend('Location', 'eastoutside');
 grid on;
 hold off;
 
-%% --- 4. MAGNETIC VOLUME VS FREQUENCY ---
+%% Plot 4: Magnetic volume vs frequency
 figure('Name', 'Volume vs Frequency', 'Color', 'w');
 hold on;
 % SiC-Si
@@ -84,13 +110,13 @@ plot(freq2_kHz, results2.Volume_T, '--s', 'Color', '#D95319', 'LineWidth', 1.5, 
 plot(freq2_kHz, results2.Volume_Total, '--k^', 'LineWidth', 2, 'DisplayName', 'SiC-GaN: Total Volume');
 
 xlabel('Frequency (kHz)'); xlim tight;
-ylabel('Volume'); 
+ylabel('Volume'); % m^3
 title('Magnetic Component Volume vs Frequency');
 legend('Location', 'best');
 grid on;
 hold off;
 
-%% --- 5. PARETO FRONT: VOLUME VS EFFICIENCY ---
+%% Plot 5: Volume vs efficiency, colored by frequency
 figure('Name', 'Pareto Front', 'Color', 'w');
 hold on;
 

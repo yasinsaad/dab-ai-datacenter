@@ -9,7 +9,8 @@ function [P_sw_total, is_zvs, t_trans_needed, E_ratio] = calculate_switching_zvs
 %       I_sw   : Instantaneous current (A) at the commutation moment.
 %       f_sw   : Switching Frequency (Hz).
 %       L_comm : Commutation Inductance (H) (e.g., Lk for primary).
-%       s      : Semiconductor struct (contains C_oss, R_g, diode params, etc.).
+%       s      : Semiconductor struct from get_semiconductor_params
+%                (uses Coss, Rg, Ciss, gate voltages, diode.*, t_RV, t_FI).
 %       t_dead : Dead time (s) allocated for the transition.
 %
 %   Outputs:
@@ -45,7 +46,7 @@ function [P_sw_total, is_zvs, t_trans_needed, E_ratio] = calculate_switching_zvs
         t_trans_needed = 1e9; % Effectively infinite time if current is near zero
     end
     
-    %% 3. Combined ZVS Condition
+    %% 2. Combined ZVS Condition
     %  ZVS is ONLY achieved if:
     %  1. We have enough energy (E_avail > E_req) AND
     %  2. The transition completes within the dead time window (t_trans < t_dead).
@@ -106,9 +107,13 @@ function [P_sw_total, is_zvs, t_trans_needed, E_ratio] = calculate_switching_zvs
         P_rr = E_rr * f_sw;
     end
     
-    %% 4. Turn-OFF Loss (Always Hard)
+    %% 3. Turn-OFF Loss (Always Hard)
     %  In DAB (SPS), turn-off always interrupts peak current, forcing a hard voltage rise.
     
+    %  t_RV and t_FI are taken from the device struct (datasheet values).
+    %  The gate-charge formulas below are kept for reference only; their
+    %  results are not used.
+
     %  Voltage Rise Time (t_RV): Charging C_rss (Miller Cap) from Plateau to Off.
     denom_rv = abs(s.V_plateau - s.V_dr_off);
     %t_RV = (s.Rg * s.Crss * V_DC) / max(denom_rv, 1e-3);
@@ -124,6 +129,6 @@ function [P_sw_total, is_zvs, t_trans_needed, E_ratio] = calculate_switching_zvs
     E_off = (V_DC * I_sw / 2) * (t_RV + t_FI);
     P_off = E_off * f_sw;
 
-    %% 5. Total Loss Summation
+    %% 4. Total Loss Summation
     P_sw_total = P_on + P_rr + P_off;
 end

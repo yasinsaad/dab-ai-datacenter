@@ -1,4 +1,25 @@
-%% 4. Plotting in a 3x2 grid (Single Column Layout)
+%% PLOT_STEADY_STATE  Steady-state waveforms (SiC-GaN, 140 kHz) in a 3x2 grid.
+%
+% Workspace inputs (loaded from
+% results/data/SiC-GaN_140kHz_steady_state.mat if not already defined):
+%   t_80                 time [s]
+%   v_in_80,  i_in_80    input voltage [V] / current [A]
+%   v_l_80,   i_l_80     inductor voltage [V] / current [A]
+%   v_out_80, i_out_80   output voltage [V] / current [A]
+% The "_80" suffix marks the steady-state window (after 80 % of the run).
+%
+% Output: results/figures/steady_state/SteadyState_SiCGaN140.pdf
+% (vector PDF, sized for an IEEE paper).
+%
+% Note: the set(groot, ...) calls change plot defaults for the whole
+% MATLAB session.
+
+addpath(fullfile(fileparts(mfilename('fullpath')), '..'));
+repo_root = setup_paths();
+if ~exist('t_80', 'var')
+    load(fullfile(repo_root, 'results', 'data', 'SiC-GaN_140kHz_steady_state.mat'));
+end
+
 % Global Line Properties
 set(groot, 'defaultLineLineWidth', 1.2); % Slightly thinner lines for smaller plots
 
@@ -9,8 +30,8 @@ set(groot, 'defaultAxesFontSize', 8); % 8pt minimum for legibility in 3.5in widt
 % Global Figure Properties (Background color)
 set(groot, 'defaultFigureColor', 'w');
 
-% Initialize figure sized for IEEE Single-Column Span
-% [x, y, width (3.5in), height (e.g., 5.0in for a taller 3x2 grid)]
+% Figure size: uncomment the Units/Position arguments for a fixed
+% 7.16 x 4.5 in (IEEE double-column) figure.
 figure('Name', 'Steady-State Waveforms')%, 'Units', 'inches', 'Position', [1, 1, 7.16, 4.5]);
 
 % Use tiledlayout for maximum space efficiency (requires R2019b+)
@@ -68,4 +89,4 @@ linkaxes([ax1, ax2, ax3, ax4, ax5, ax6], 'x');
 % Overall Title (Optional: You may want to remove this and use the LaTeX caption instead to save space)
 title(t, 'SiC-GaN Waveforms (140 kHz)', 'FontName', 'Times New Roman', 'FontWeight', 'bold', 'FontSize', 10);
 % Export as a vector PDF
-exportgraphics(gcf, 'SteadyState_SiCGaN140.pdf', 'ContentType', 'vector');
+exportgraphics(gcf, fullfile(repo_root, 'results', 'figures', 'steady_state', 'SteadyState_SiCGaN140.pdf'), 'ContentType', 'vector');

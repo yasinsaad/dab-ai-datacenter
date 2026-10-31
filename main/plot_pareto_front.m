@@ -1,4 +1,27 @@
-% --- CONSOLIDATED PARETO FRONT: SCATTER WITH FRONTIER LINES ---
+%% PLOT_PARETO_FRONT  Volume-efficiency Pareto fronts for SiC-GaN and SiC-Si.
+%
+% Workspace inputs (loaded from results/data/ if not already defined):
+%   results_GaN : SiC-GaN sweep  (results/data/SiC-GaN_sweep_40-250kHz.mat)
+%   results_Si  : SiC-Si sweep   (results/data/SiC-Si_sweep.mat)
+%
+% Plots every design point colored by switching frequency, and draws the
+% Pareto front (minimum volume, maximum efficiency) for each device pair.
+% Volume is converted from m^3 to cm^3.
+%
+% Renamed from pareto.m: that name shadowed MATLAB's built-in pareto().
+
+addpath(fullfile(fileparts(mfilename('fullpath')), '..'));
+repo_root = setup_paths();
+if ~exist('results_GaN', 'var')
+    tmp = load(fullfile(repo_root, 'results', 'data', 'SiC-GaN_sweep_40-250kHz.mat'), 'results');
+    results_GaN = tmp.results;
+end
+if ~exist('results_Si', 'var')
+    tmp = load(fullfile(repo_root, 'results', 'data', 'SiC-Si_sweep.mat'), 'results');
+    results_Si = tmp.results;
+end
+clear tmp
+
 figure('Name', 'Consolidated Pareto Front', 'Color', 'w');
 hold on;
 
@@ -10,7 +33,8 @@ vol_GaN = results_GaN.Volume_Total(valid_idx_GaN).*1e6;
 eff_GaN = results_GaN.eff_analytical(valid_idx_GaN);
 freq_GaN = results_GaN.freq(valid_idx_GaN)./1e3;
 
-% Identify Pareto points for SiC-GaN (Minimize Vol, Maximize Eff)
+% Pareto points for SiC-GaN: a point is dropped if another point has
+% lower-or-equal volume and higher-or-equal efficiency (one strictly).
 is_par_GaN = true(size(vol_GaN));
 for i = 1:length(vol_GaN)
     for j = 1:length(vol_GaN)
@@ -70,11 +94,11 @@ cb = colorbar;
 cb.Label.String = 'Switching Frequency (kHz)';
 colormap(jet); 
 
-xlabel('Total Magnetic Volume (cm^3)'); % Added units for completeness
+xlabel('Total Magnetic Volume (cm^3)');
 ylabel('Efficiency (%)');
 grid on;
 
-% Custom Legend (Includes the line style and marker style)
+% Legend from dummy NaN lines, so it shows marker + line style only
 h_leg_GaN = plot(nan, nan, 'ko-', 'MarkerSize', 8, 'LineWidth', 1.5);
 h_leg_Si = plot(nan, nan, 'ks--', 'MarkerFaceColor', [0.5 0.5 0.5], 'MarkerSize', 8, 'LineWidth', 1.5);
 legend([h_leg_GaN, h_leg_Si], {'SiC-GaN Frontier', 'SiC-Si Frontier'}, 'Location', 'southwest');
