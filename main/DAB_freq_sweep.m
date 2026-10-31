@@ -24,8 +24,8 @@
 %
 % To compare device pairs, change the get_semiconductor_params call,
 % run the sweep, and save `results` to results/data/.
-% For long sweeps, you can split freq_steps over several runs and join
-% them with main/merge_results.m.
+% Frequencies where the simulation crashes are reported and removed from
+% `results` before plotting.
 
 clear; clc; close all;
 addpath(fullfile(fileparts(mfilename('fullpath')), '..'));
@@ -250,6 +250,20 @@ for i = 1:num_sweep
     close
 end
 
+%% --- 4. REMOVE CRASHED POINTS ---
+% A crashed simulation leaves its column at zero (freq == 0).
+ok = results.freq ~= 0;
+if any(~ok)
+    fprintf('Removed %d crashed point(s): %s kHz\n', nnz(~ok), mat2str(freq_steps(~ok)/1e3));
+end
+result_fields = fieldnames(results);
+for k = 1:numel(result_fields)
+    results.(result_fields{k}) = results.(result_fields{k})(:, ok);
+end
+data_loss_body   = data_loss_body(ok);
+data_loss_body_h = data_loss_body_h(ok);
+data_loss_body_l = data_loss_body_l(ok);
+clear ok result_fields k
 
-%% --- 4. PLOTTING RESULTS ---
+%% --- 5. PLOTTING RESULTS ---
 plot_sweep_results

@@ -49,8 +49,7 @@ DAB_freq_sweep.m ──► results (struct) ──► save to results/data/*.mat
         │                                        │
         │ per frequency:                         ├─► plot_sweep_results.m (one pair)
         │  1. size Lk for 1.3 × 25 kW            ├─► plot_comparison.m (both pairs)
-        │  2. simulate (Simulink, closed loop)   ├─► plot_pareto_front.m
-        │                                        └─► merge_results.m (join split runs)
+        │  2. simulate (Simulink, closed loop)   └─► plot_pareto_front.m
         │  3. steady-state currents (last 20 %)
         │  4. loss models + ZVS check
         │  5. magnetic volume
@@ -58,7 +57,7 @@ DAB_freq_sweep.m ──► results (struct) ──► save to results/data/*.mat
 results/current_plots.pdf (output current per frequency, to check steady state)
 ```
 
-The default sweep is 40–250 kHz in 10 kHz steps, as in the paper (the paper's SiC-Si data covers 40–150 kHz). Each point simulates 0.3 s. For long sweeps you can split `freq_steps` over several runs, save each run's `results` under a different name, and join them with `merge_results` (edit `run_names` at its top).
+The default sweep is 40–250 kHz in 10 kHz steps, as in the paper (the paper's SiC-Si data covers 40–150 kHz). Each point simulates 0.3 s. If a simulation crashes, the sweep prints the frequency, skips it, and removes it from `results` at the end.
 
 To produce a sweep for a different device pair, change this line in `main/DAB_freq_sweep.m`:
 
@@ -78,8 +77,7 @@ dab_codes/
 │   ├── plot_sweep_results.m      plots for one device pair (called by the sweep)
 │   ├── plot_comparison.m         SiC-Si vs SiC-GaN plots
 │   ├── plot_pareto_front.m       volume-efficiency Pareto fronts
-│   ├── plot_steady_state.m       3x2 steady-state waveform figure
-│   └── merge_results.m           join results from split sweep runs
+│   └── plot_steady_state.m       3x2 steady-state waveform figure
 ├── models/
 │   ├── DAB_freq_sweep_sim.slx    DAB model used by the sweep
 │   └── DAB_freq_sweep_sim_ver.slx  same circuit with 4 extra voltage/current
