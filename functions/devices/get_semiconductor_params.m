@@ -42,7 +42,7 @@ function p = load_device_profile(type)
             p.Vf  = 3.95;           % V, Table 6 typ at 27 A, 25 C and 800V
 
             % Gate network
-            p.Rd = 2.0;             % ohm, chosen external gate resistor in the table
+            p.Rd = 2.0;             % ohm, chosen external gate resistor in the table  (also used as Simulink diode Rd; see config/dab_parameters.m)
             p.Rg = 2.6;             % ohm, Table 4 internal gate resistance
 
             % Charges all given at 800V
@@ -84,7 +84,7 @@ function p = load_device_profile(type)
             p.Vf  = 0.7;            % V, typical body diode forward voltage
 
             % Gate network
-            p.Rd = 1.0;             % ohm, external gate resistor used in test
+            p.Rd = 1.0;             % ohm, external gate resistor used in test  (also used as Simulink diode Rd; see config/dab_parameters.m)
             p.Rg = 1.4;             % ohm, max internal gate resistance given in table
 
             % Charges
@@ -124,7 +124,7 @@ function p = load_device_profile(type)
             p.Vf  = 1.4;            % V, reverse conduction drop estimate
 
             % Gate network
-            p.Rd = 2.0;             % ohm, chosen external gate resistor
+            p.Rd = 2.0;             % ohm, chosen external gate resistor  (also used as Simulink diode Rd; see config/dab_parameters.m)
             p.Rg = 0.6;             % ohm, internal gate resistance
 
             % Charges(typical at 50V)

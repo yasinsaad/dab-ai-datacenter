@@ -156,5 +156,6 @@ Main fields of `results` (one entry per frequency):
 
 - **Winding current fix (after the TENCON paper).** Transformer copper loss and inductor loss now use the RMS of the AC link current, I_rms,link = √2 · I_rms,switch. Earlier versions used the DC input/output currents, which underestimated these losses (about 1.5× at 140 kHz; efficiency about 0.3 points too high). The data in `results/data/` and the figures in `results/figures/paper/` were produced before the fix and match the published paper. The √2 factor needs 50 % duty with no dead time, which is how the model gates the switches.
 - **R_ac is fixed with frequency.** Skin and proximity effects are not modeled.
+- **`Rd` is passed to the wrong model parameter (left as is).** `Rd` in `get_semiconductor_params` is the external gate resistor (1–2 Ω), but the Simulink MOSFET block uses it as its internal-diode resistance. With 50 % gating and no dead time the diodes barely conduct, so the effect is small. Fix it before adding dead time to the models. See `config/dab_parameters.m`.
 
 - The plot scripts call `set(groot, ...)`, which changes plot defaults for the rest of the MATLAB session.

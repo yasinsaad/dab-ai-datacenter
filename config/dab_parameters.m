@@ -70,7 +70,14 @@ trans.Rac2 = 1e-5;                 % ohm, secondary
 
 % --- Push parameters to the base workspace for the Simulink model ---
 assignin('base', 'R_on_h', semi.hv.Ron);  assignin('base', 'R_on_l', semi.lv.Ron);
-assignin('base', 'R_d_h',  semi.hv.Rd);   assignin('base', 'R_d_l',  semi.lv.Rd);   % MOSFET block 'Rd' = internal-diode resistance
+% KNOWN ISSUE (left as is): semi.*.Rd is the datasheet external gate
+% resistor (2 ohm SiC/GaN, 1 ohm Si), but the Simulink MOSFET block uses
+% its 'Rd' parameter as the internal-diode resistance (block default
+% 0.01 ohm). The models gate each leg at 50 % duty with no dead time, so
+% the diodes barely conduct and this has little effect on the results.
+% If dead time is added to the models, pass a real diode resistance here
+% instead (e.g. a separate semi.*.Rd_diode field).
+assignin('base', 'R_d_h',  semi.hv.Rd);   assignin('base', 'R_d_l',  semi.lv.Rd);
 assignin('base', 'V_f_h',  semi.hv.Vf);   assignin('base', 'V_f_l',  semi.lv.Vf);
 assignin('base', 'R_cab_h', passives.hv.R_cab); assignin('base', 'L_cab_h', passives.hv.L_cab);
 assignin('base', 'C_bulk_h',passives.hv.C_bulk);
