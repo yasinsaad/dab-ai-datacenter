@@ -67,7 +67,7 @@ trans.Rac2 = 1e-5;                 % ohm, secondary
 
 % --- Push parameters to the base workspace for the Simulink model ---
 assignin('base', 'R_on_h', semi.hv.Ron);  assignin('base', 'R_on_l', semi.lv.Ron);
-assignin('base', 'R_d_h',  semi.hv.Rd);   assignin('base', 'R_d_l',  semi.lv.Rd);
+assignin('base', 'R_d_h',  semi.hv.Rd);   assignin('base', 'R_d_l',  semi.lv.Rd);   % MOSFET block 'Rd' = internal-diode resistance
 assignin('base', 'V_f_h',  semi.hv.Vf);   assignin('base', 'V_f_l',  semi.lv.Vf);
 assignin('base', 'R_cab_h', passives.hv.R_cab); assignin('base', 'L_cab_h', passives.hv.L_cab);
 assignin('base', 'C_bulk_h',passives.hv.C_bulk);

@@ -12,7 +12,11 @@ function [hv_params, lv_params] = get_semiconductor_params(type_hv, type_lv)
 %
 % Outputs (struct fields, SI units):
 %   Ron, Vf                  on-resistance [ohm], reverse-conduction drop [V]
-%   Rd, Rg                   external / internal gate resistance [ohm]
+%   Rd                       external gate resistor from the datasheet [ohm].
+%                            Note: the Simulink models use R_d_h / R_d_l
+%                            (= Rd) as the MOSFET block's internal-diode
+%                            resistance, not as a gate resistor.
+%   Rg                       internal gate resistance [ohm]
 %   Qg, Qgs, Qgd (, Qoss)    charges [C]
 %   Ciss, Crss, Coss         capacitances [F]
 %   V_dr_on, V_dr_off        gate-drive levels [V]

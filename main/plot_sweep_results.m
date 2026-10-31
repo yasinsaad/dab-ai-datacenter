@@ -27,7 +27,7 @@ grid on;
 
 %% Plot 2: Total loss vs frequency
 figure('Name', 'Total Loss vs Frequency', 'Color', 'w');
-plot(freq_kHz, results.loss_total, '-o', 'LineWidth', 2, 'Color', '#D95319', 'DisplayName', "SiC-GaN");
+plot(freq_kHz, results.loss_total, '-o', 'LineWidth', 2, 'Color', '#D95319');
 xlabel('Frequency (kHz)'); xlim tight;
 ylabel('Total Loss (W)');
 title('Total System Loss vs Frequency');

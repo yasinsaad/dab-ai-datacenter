@@ -13,8 +13,8 @@ Topology: [`docs/DAB_topology.pdf`](docs/DAB_topology.pdf).
 
 ## Requirements
 
-- MATLAB R2021a or later (uses `exportgraphics`, `tiledlayout`, `xline`/`yline`)
-- Simulink and Simscape Electrical (the model uses the Specialized Power Systems library)
+- MATLAB and Simulink R2022b to R2025b. The models were saved in R2022b, and they use the Specialized Power Systems library, which MathWorks removed in R2026a.
+- Simscape Electrical (provides that library)
 
 ## Quick start
 
@@ -24,7 +24,7 @@ From any folder in MATLAB:
 run('path/to/dab_codes/main/run_frequency_sweep.m')
 ```
 
-Each script in `main/` adds the repo folders to the path on its own. If you run single sections (Ctrl+Enter) instead of the whole file, run `setup_paths` once from the repo root first.
+The `run_*` and `plot_*` scripts in `main/` add the repo folders to the path themselves. If you run single sections (Ctrl+Enter) instead of the whole file, run `setup_paths` once from the repo root first.
 
 ## Reproducing the paper figures
 
@@ -36,7 +36,7 @@ All paper figures can be regenerated from the saved data in `results/data/`, wit
 | Figs. 2, 3, 5, 6 | `plot_comparison` | `fig2_…`, `fig3_…`, `fig5_…`, `fig6_…` |
 | Fig. 4(a) | `load results/data/SiC-GaN_sweep_40-250kHz.mat`, then `plot_sweep_results` | `fig4a_loss_breakdown_SiC-GaN.pdf` |
 | Fig. 4(b) | `load results/data/SiC-Si_sweep_40-150kHz.mat`, then `plot_sweep_results` | `fig4b_loss_breakdown_SiC-Si.pdf` |
-| Fig. 7 | `plot_steady_state_waveforms` (writes the PDF itself) | `fig7_steady_state_SiC-GaN_140kHz.pdf` |
+| Fig. 7 | `plot_steady_state_waveforms` (writes the PDF itself, replacing the saved copy) | `fig7_steady_state_SiC-GaN_140kHz.pdf` |
 
 To regenerate the Fig. 7 data itself (needs Simulink), run `run_steady_state_waveforms`. It simulates `DAB_waveform_model` at 140 kHz, saves the last 30 µs to `results/data/SiC_1200V-GaN_140kHz_steady_state.mat` (the paper's file is not overwritten), and prints the difference from the paper's data.
 
@@ -74,7 +74,7 @@ device_lv = 'GaN';        % or 'Si_60V'
 
 Then save the workspace `results` struct to `results/data/`. Converter parameters (power, passives, transformer) are in `config/dab_parameters.m`.
 
-After each sweep, open `results/current_plots_<HV>-<LV>.pdf` (e.g. `current_plots_SiC_1200V-GaN.pdf`) and check that the output current settles before the steady-state window (second dashed line) on every page. Each device pair has its own file; rerunning a pair replaces only that file.
+After each sweep, open `results/current_plots_<HV>-<LV>.pdf` (e.g. `current_plots_SiC_1200V-GaN.pdf`) and check that the output current settles on the target (horizontal dashed line) before the steady-state window starts (vertical dashed line) on every page. Each device pair has its own file; rerunning a pair replaces only that file.
 
 ## Repository layout
 
@@ -91,7 +91,7 @@ dab_codes/
 │   ├── plot_pareto_front.m            volume-efficiency Pareto fronts
 │   └── plot_steady_state_waveforms.m  3x2 steady-state waveform figure (Fig. 7)
 ├── models/
-│   ├── DAB_sweep_model.slx            DAB circuit, logs bridge and DC currents
+│   ├── DAB_sweep_model.slx            DAB circuit; logs one HV and one LV switch current and the DC currents
 │   └── DAB_waveform_model.slx         same circuit plus 3 voltage probes and an
 │                                      inductor-current probe
 ├── functions/
@@ -108,7 +108,7 @@ dab_codes/
 ├── utils/
 │   └── savefigs.m                export open figures as vector PDFs
 ├── results/
-│   ├── data/                     saved sweep results (.mat)
+│   ├── data/                     saved sweep results and steady-state waveforms (.mat)
 │   └── figures/paper/            figures used in the paper, named by figure number
 └── docs/
     ├── DAB_AI_Data_Center_paper.pdf   paper (pre-publication version)
@@ -135,8 +135,8 @@ Main fields of `results` (one entry per frequency):
 | `breakdown` | W | 7×N: conduction, cable, gate drive, switching, body diode, transformer, inductor DC |
 | `coreLoss`, `copperLoss`, `totalTransformerLoss` | W | transformer losses |
 | `Lk` | H | series inductance |
-| `I_rms_h`, `I_rms_l` | A | HV / LV bridge RMS current |
-| `I_sw_ss_h`, `I_sw_ss_l` | A | HV / LV peak current (used as switching current) |
+| `I_rms_h`, `I_rms_l` | A | RMS current of one HV / LV switch (`Mosfet7` / `Mosfet4` in the model) |
+| `I_sw_ss_h`, `I_sw_ss_l` | A | HV / LV switch peak current, used as the switching current |
 | `t_req_h`, `t_req_l` | s | time the switch node needs to complete a ZVS transition |
 | `Volume_L`, `Volume_T`, `Volume_Total` | m³ | inductor, transformer, total magnetic volume |
 
@@ -144,13 +144,13 @@ Main fields of `results` (one entry per frequency):
 
 | Loss | Model | Function |
 |---|---|---|
-| Conduction | 4 · I_rms² · R_on per bridge | `run_frequency_sweep.m` |
-| Cable | 2 · I_rms² · R_cable per side | `run_frequency_sweep.m` |
+| Conduction | 4 · I_rms,switch² · R_on per bridge | `run_frequency_sweep.m` |
+| Cable | 2 · I_rms,DC² · R_cable per side | `run_frequency_sweep.m` |
 | Gate drive | 4 · Q_g · V_drive · f_sw per bridge | `run_frequency_sweep.m` |
-| Inductor DC | I_rms² · R_dc, R_dc from ETD44 geometry | `get_inductor_params.m` |
+| Inductor DC | I_rms,in² · R_dc (DC input current), R_dc from ETD44 geometry | `get_inductor_params.m` |
 | Switching | Analytical turn-on / turn-off / recovery model (Energies 2022, 15, 8262). Turn-on and recovery loss are zero when ZVS holds (enough inductor energy **and** transition finishes within the dead time) | `calculate_switching_zvs.m` |
 | Body diode | V_f · I · (dead time − transition time) · 4 · f_sw, ZVS cases only | `calculate_body_diode_losses.m` |
-| Transformer | Steinmetz core loss (SIFERRIT N97, E 140/68/40 core) with square-wave factor, plus I²·R_ac copper loss (Krismer DAB model) | `calculate_transformer_losses.m` |
+| Transformer | Steinmetz core loss (SIFERRIT N97, E 140/68/40 core) with square-wave factor, plus I²·R_ac copper loss with the DC input/output currents (R_ac from the Krismer DAB model) | `calculate_transformer_losses.m` |
 
 ## Notes
 

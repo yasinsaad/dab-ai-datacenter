@@ -9,9 +9,11 @@
 % Output:
 %   results/data/<HV>-<LV>_<f>kHz_steady_state.mat with
 %     t_80                  time [s]
-%     v_in_80,  i_in_80     input voltage [V] / current [A]
+%     v_in_80               HV DC-link voltage, across the bulk capacitor [V]
+%     i_in_80               DC input current [A]
 %     v_l_80,   i_l_80      series-inductor voltage [V] / current [A]
-%     v_out_80, i_out_80    output voltage [V] / current [A]
+%     v_out_80              LV DC-link voltage [V]
+%     i_out_80              DC output current [A]
 %   Variable names match those plot_steady_state_waveforms.m expects.
 %
 % The paper's data is in results/data/SiC-GaN_140kHz_steady_state.mat.
@@ -32,7 +34,7 @@ device_hv = 'SiC_1200V';           % HV bridge (see get_semiconductor_params)
 device_lv = 'GaN';                 % LV bridge: 'GaN' or 'Si_60V'
 f_sw_curr = 140e3;                 % Hz, switching frequency (read by the model)
 sim_time = 0.3;                    % s, Simulink stop time (same as the sweep)
-window = 30e-6;                    % s, saved window at the end of the run
+window_s = 30e-6;                  % s, saved window at the end of the run
                                    % (30 us = 4.2 periods at 140 kHz, as in Fig. 7)
 
 %% --- 2. PARAMETERS ---
@@ -45,17 +47,18 @@ fprintf('Simulating %s-%s at %.1f kHz...\n', device_hv, device_lv, f_sw_curr/1e3
 simOut = sim(model_name, 'StopTime', num2str(sim_time));
 
 %% --- 4. EXTRACT THE STEADY-STATE WINDOW ---
-t = simOut.tout;
+% All six signals are logged as timeseries; use their own time vector and
+% check that they share it.
 signals = {'V_raw_in', 'I_raw_in', 'V_raw_Ind', 'I_raw_Ind', 'V_raw_out', 'I_raw_out'};
+t = simOut.I_raw_Ind.Time;
 for k = 1:numel(signals)
-    if numel(simOut.(signals{k}).Data) ~= numel(t)
-        error('%s has %d samples but tout has %d. Check the "To Workspace" blocks.', ...
-              signals{k}, numel(simOut.(signals{k}).Data), numel(t));
+    if ~isequal(simOut.(signals{k}).Time, t)
+        error('%s is logged on a different time grid. Check the "To Workspace" blocks.', signals{k});
     end
 end
 
-% Keep samples in the last `window` seconds (half-sample tolerance)
-keep = t >= t(end) - window - T/2000;
+% Keep samples in the last window_s seconds (half-sample tolerance)
+keep = t >= t(end) - window_s - T/2000;
 
 t_80     = t(keep);
 v_in_80  = simOut.V_raw_in.Data(keep);

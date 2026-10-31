@@ -57,10 +57,10 @@ results.totalTransformerLoss = zeros(1, num_sweep);  % W
 results.Lk = zeros(1, num_sweep);              % H
 
 % Current metrics
-results.I_rms_h = zeros(1, num_sweep);         % A, HV bridge RMS
-results.I_rms_l = zeros(1, num_sweep);         % A, LV bridge RMS
-results.I_sw_ss_h = zeros(1, num_sweep);       % A, HV peak (used as switching-instant current)
-results.I_sw_ss_l = zeros(1, num_sweep);       % A, LV peak
+results.I_rms_h = zeros(1, num_sweep);         % A, RMS current of one HV switch
+results.I_rms_l = zeros(1, num_sweep);         % A, RMS current of one LV switch
+results.I_sw_ss_h = zeros(1, num_sweep);       % A, HV switch peak current (used as switching-instant current)
+results.I_sw_ss_l = zeros(1, num_sweep);       % A, LV switch peak current
 
 results.t_req_h = zeros(1, num_sweep);         % s, ZVS transition time needed, HV
 results.t_req_l = zeros(1, num_sweep);         % s, ZVS transition time needed, LV
@@ -102,6 +102,10 @@ for i = 1:num_sweep
     end
 
     %% D. Extract logged currents ("To Workspace" blocks)
+    %   I_raw_h   current of one HV switch (Mosfet7, MOSFET + body diode)
+    %   I_raw_l   current of one LV switch (Mosfet4)
+    %   I_raw_in  DC input current (source side of the HV bulk capacitor)
+    %   I_raw_out DC output current
     try
         I_raw_h = simOut.I_raw_h.Data; I_raw_l = simOut.I_raw_l.Data;
         I_raw_in = simOut.I_raw_in.Data; I_raw_out = simOut.I_raw_out.Data;
@@ -109,7 +113,7 @@ for i = 1:num_sweep
         error('Variable Name Mismatch: Check "To Workspace" block names!');
     end
 
-    % Steady state: keep samples after 80 % of the run (last 20 %)
+    % Steady state: keep the last 20 % of the logged samples
     idx = floor(length(I_raw_h) * 0.8);
     I_ss_h = I_raw_h(idx:end); I_ss_l = I_raw_l(idx:end);
     I_ss_in = I_raw_in(idx:end); I_ss_out = I_raw_out(idx:end);
@@ -118,14 +122,17 @@ for i = 1:num_sweep
     I_rms_h = rms(I_ss_h); I_rms_l = rms(I_ss_l);
     I_rms_in = rms(I_ss_in); I_rms_out = rms(I_ss_out);
 
-    % Peak bridge currents, used as the switching-instant current.
-    % This overestimates the commutation current; the exact value is the
-    % instantaneous bridge current at the commutation moment.
+    % Peak switch currents (= peak of the AC link current), used as the
+    % switching-instant current. This is an upper bound; the exact value is
+    % the instantaneous current at the commutation moment.
     I_sw_ss_h = max(abs(I_ss_h));
     I_sw_ss_l = max(abs(I_ss_l));
 
     % --- 1. Conduction and passive losses ---
-    % 4 switches per bridge
+    % Conduction: per-switch RMS current, 4 switches per bridge.
+    % Cable: 2 cable branches per side, DC currents.
+    % Inductor DC: uses the DC input current. The series inductor carries
+    % the AC link current, whose RMS is sqrt(2) * I_rms_h.
     power.loss.conduction = 4*(I_rms_h^2 * semi.hv.Ron) + 4*(I_rms_l^2 * semi.lv.Ron);
     power.loss.cable  = 2*(I_rms_in^2 * passives.hv.R_cab) + 2*(I_rms_out^2 * passives.lv.R_cab);
     power.loss.gateDrive = (4 * semi.hv.Qg * semi.hv.V_dr_on * f_sw_curr) + ...
@@ -153,6 +160,9 @@ for i = 1:num_sweep
     data_loss_body_l(i) = P_body_l;
 
     % --- 4. Transformer losses (core + copper) ---
+    % Copper loss uses the DC input/output currents as winding currents.
+    % The windings carry the AC link current: sqrt(2) * I_rms_h on the
+    % primary and sqrt(2) * I_rms_l on the secondary.
     [P_core, P_cu, P_trans, B_pk, k_fe] = calculate_transformer_losses( ...
         f_sw_curr, source.Vin, I_rms_in, I_rms_out, ...
         trans.coreVolume, trans.coreArea, trans.V1, ...

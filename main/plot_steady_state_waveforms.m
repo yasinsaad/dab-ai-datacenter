@@ -3,10 +3,11 @@
 % Workspace inputs (loaded from
 % results/data/SiC-GaN_140kHz_steady_state.mat if not already defined):
 %   t_80                 time [s]
-%   v_in_80,  i_in_80    input voltage [V] / current [A]
-%   v_l_80,   i_l_80     inductor voltage [V] / current [A]
-%   v_out_80, i_out_80   output voltage [V] / current [A]
-% The "_80" suffix marks the steady-state window (after 80 % of the run).
+%   v_in_80,  i_in_80    HV DC-link voltage [V] / DC input current [A]
+%   v_l_80,   i_l_80     series-inductor voltage [V] / current [A]
+%   v_out_80, i_out_80   LV DC-link voltage [V] / DC output current [A]
+% The paper data covers the last 30 us of a 0.3 s run (the "_80" suffix
+% is the original variable naming).
 %
 % Output: results/figures/paper/fig7_steady_state_SiC-GaN_140kHz.pdf
 % (Fig. 7 of the TENCON paper).
