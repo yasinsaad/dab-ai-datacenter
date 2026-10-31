@@ -1,11 +1,15 @@
-function [P_core, P_cu, P_tr, B_pk, k_fe] = calculateTransformerLosses( ...
+function [P_core, P_cu, P_tr, B_pk, k_fe] = calculate_transformer_losses( ...
     f_sw, Vin, Ipri_rms, Isec_rms, ...
     V_core_fixed, A_core_fixed, N_pri, ...
     Ks_ref, alpha, beta, ...
     Rac_pri, Rac_sec, C_wave)
-% CALCULATETRANSFORMERLOSSES
+% CALCULATE_TRANSFORMER_LOSSES  Core + copper loss of a fixed transformer design.
 % ---------------------------------------------------------------
-% Estimates transformer loss for a fixed magnetic design.
+%
+% Usage:
+%   [P_core, P_cu, P_tr, B_pk, k_fe] = calculate_transformer_losses( ...
+%       f_sw, Vin, Ipri_rms, Isec_rms, V_core, A_core, N_pri, ...
+%       Ks_ref, alpha, beta, Rac_pri, Rac_sec, C_wave)
 %
 % OUTPUTS:
 %   P_core  : estimated magnetic core loss [W]
@@ -50,7 +54,12 @@ function [P_core, P_cu, P_tr, B_pk, k_fe] = calculateTransformerLosses( ...
 % 3) Copper-loss model:
 %       P_cu = Ipri_rms^2 * Rac_pri + Isec_rms^2 * Rac_sec
 %
-%   Rac for both found using Krismer Model
+%    Rac_pri and Rac_sec are taken from the Krismer DAB model.
+%    Ipri_rms and Isec_rms must be the RMS currents in the windings (the
+%    AC link current), not the DC input/output currents.
+%    Limitation: Rac_pri and Rac_sec are fixed; their rise with frequency
+%    (skin and proximity effects) is not modeled.
+%
 % LITERATURE INSPIRATION
 % ---------------------------------------------------------------
 % - Steinmetz-style magnetic loss law:
@@ -105,7 +114,7 @@ function [P_core, P_cu, P_tr, B_pk, k_fe] = calculateTransformerLosses( ...
     %   Ks_ref = p_core_ref = k_fe * f_ref^alpha * B_ref^beta
     %
     % Rearranging gives the Steinmetz coefficient k_fe.
-    f_ref = 25e3;   % 100 kHz
+    f_ref = 25e3;   % 25 kHz
     B_ref = 0.1;     % 100 mT = 0.1 T
 
     % Convert the single reference loss-density point into the coefficient

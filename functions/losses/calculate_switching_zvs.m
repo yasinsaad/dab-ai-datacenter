@@ -9,7 +9,8 @@ function [P_sw_total, is_zvs, t_trans_needed, E_ratio] = calculate_switching_zvs
 %       I_sw   : Instantaneous current (A) at the commutation moment.
 %       f_sw   : Switching Frequency (Hz).
 %       L_comm : Commutation Inductance (H) (e.g., Lk for primary).
-%       s      : Semiconductor struct (contains C_oss, R_g, diode params, etc.).
+%       s      : Semiconductor struct from get_semiconductor_params
+%                (uses Coss, Rg, Ciss, gate voltages, diode.*, t_RV, t_FI).
 %       t_dead : Dead time (s) allocated for the transition.
 %
 %   Outputs:
@@ -45,7 +46,7 @@ function [P_sw_total, is_zvs, t_trans_needed, E_ratio] = calculate_switching_zvs
         t_trans_needed = 1e9; % Effectively infinite time if current is near zero
     end
     
-    %% 3. Combined ZVS Condition
+    %% 2. Combined ZVS Condition
     %  ZVS is ONLY achieved if:
     %  1. We have enough energy (E_avail > E_req) AND
     %  2. The transition completes within the dead time window (t_trans < t_dead).
@@ -106,24 +107,20 @@ function [P_sw_total, is_zvs, t_trans_needed, E_ratio] = calculate_switching_zvs
         P_rr = E_rr * f_sw;
     end
     
-    %% 4. Turn-OFF Loss (Always Hard)
+    %% 3. Turn-OFF Loss (Always Hard)
     %  In DAB (SPS), turn-off always interrupts peak current, forcing a hard voltage rise.
     
-    %  Voltage Rise Time (t_RV): Charging C_rss (Miller Cap) from Plateau to Off.
-    denom_rv = abs(s.V_plateau - s.V_dr_off);
-    %t_RV = (s.Rg * s.Crss * V_DC) / max(denom_rv, 1e-3);
-    
-    %  Current Fall Time (t_FI): Discharging C_iss from Plateau to Threshold.
-    term_start = abs(s.V_dr_off - s.V_plateau);
-    term_end   = abs(s.V_dr_off - s.V_gs_th);
-    %t_FI = s.Rg * s.Ciss * log(max(term_start, 1e-3) / max(term_end, 1e-3));
+    %  Voltage rise time t_RV and current fall time t_FI come from the device
+    %  struct (datasheet values). Gate-charge estimates, for reference:
+    %    t_RV = Rg * Crss * V_DC / |V_plateau - V_dr_off|
+    %    t_FI = Rg * Ciss * ln(|V_dr_off - V_plateau| / |V_dr_off - V_gs_th|)
     t_FI = s.t_FI;
     t_RV = s.t_RV;
-    
+
     %  [Eq. 36] Turn-OFF Energy (E_off): Overlap of rising V and falling I.
     E_off = (V_DC * I_sw / 2) * (t_RV + t_FI);
     P_off = E_off * f_sw;
 
-    %% 5. Total Loss Summation
+    %% 4. Total Loss Summation
     P_sw_total = P_on + P_rr + P_off;
 end

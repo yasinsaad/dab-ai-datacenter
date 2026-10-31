@@ -1,5 +1,6 @@
 function [V_L, V_T, V_total, info] = dab_size_calc(f, Vin, Lk, Ipk)
-
+% DAB_SIZE_CALC  Magnetic volume estimate (inductor + transformer) for one design point.
+%
 % INPUTS:
 %   f      : switching frequency [Hz]
 %   Vin    : primary DC voltage [V]
