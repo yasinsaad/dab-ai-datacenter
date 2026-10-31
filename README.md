@@ -54,18 +54,21 @@ DAB_freq_sweep.m ──► results (struct) ──► save to results/data/*.mat
         │  4. loss models + ZVS check
         │  5. magnetic volume
         ▼
-results/current_plots.pdf (output current per frequency, to check steady state)
+results/current_plots_<HV>-<LV>.pdf (output current per frequency, to check steady state)
 ```
 
 The default sweep is 40–250 kHz in 10 kHz steps, as in the paper (the paper's SiC-Si data covers 40–150 kHz). Each point simulates 0.3 s. If a simulation crashes, the sweep prints the frequency, skips it, and removes it from `results` at the end.
 
-To produce a sweep for a different device pair, change this line in `main/DAB_freq_sweep.m`:
+To produce a sweep for a different device pair, change these lines at the top of `main/DAB_freq_sweep.m`:
 
 ```matlab
-[semi.hv, semi.lv] = get_semiconductor_params('SiC_1200V', 'GaN');   % or 'Si_60V'
+device_hv = 'SiC_1200V';
+device_lv = 'GaN';        % or 'Si_60V'
 ```
 
 Then save the workspace `results` struct to `results/data/`.
+
+After each sweep, open `results/current_plots_<HV>-<LV>.pdf` (e.g. `current_plots_SiC_1200V-GaN.pdf`) and check that the output current settles before the steady-state window (second dashed line) on every page. Each device pair has its own file; rerunning a pair replaces only that file.
 
 ## Repository layout
 

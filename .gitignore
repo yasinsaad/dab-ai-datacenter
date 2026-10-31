@@ -1,5 +1,5 @@
 *.asv
 slprj/
 *.slxc
-results/current_plots.pdf
-current_plots.pdf
+results/current_plots*.pdf
+current_plots*.pdf

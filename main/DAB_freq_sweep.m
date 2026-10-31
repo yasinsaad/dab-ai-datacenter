@@ -18,12 +18,13 @@
 %   results          struct of per-frequency arrays (see "Initialize Data Arrays")
 %   data_loss_body*  body-diode loss per frequency [W]
 % Outputs (files):
-%   results/current_plots.pdf  output current vs time for every frequency,
-%                              to check that each run reached steady
-%                              state. Overwritten on every run.
+%   results/current_plots_<HV>-<LV>.pdf
+%       Output current vs time, one page per frequency, to check that each
+%       run reached steady state. One file per device pair; rerunning a
+%       pair replaces only that pair's file.
 %
-% To compare device pairs, change the get_semiconductor_params call,
-% run the sweep, and save `results` to results/data/.
+% To compare device pairs, change device_hv / device_lv below, run the
+% sweep, and save `results` to results/data/.
 % Frequencies where the simulation crashes are reported and removed from
 % `results` before plotting.
 
@@ -33,6 +34,8 @@ repo_root = setup_paths();
 
 %% --- 1. CONFIGURATION ---
 model_name = 'DAB_freq_sweep_sim';
+device_hv = 'SiC_1200V';           % HV bridge: 'SiC_1200V' (see get_semiconductor_params)
+device_lv = 'GaN';                 % LV bridge: 'GaN' or 'Si_60V'
 power.target = 25000;              % W, nominal output power (25 kW)
 headroom_factor = 1.3;             % Lk is sized for 1.3 x nominal = 32.5 kW
 freq_steps = (40:10:250) * 1e3;    % Hz, sweep points (40-250 kHz in 10 kHz steps, as in the paper)
@@ -43,9 +46,8 @@ max_power = headroom_factor*power.target;
 %% --- 2. PARAMETERS ---
 
 % A. Semiconductor profiles (HV bridge, LV bridge).
-%    Options: 'SiC_1200V' | 'Si_60V' | 'GaN'  (see get_semiconductor_params).
 %    Dead time is set inside get_semiconductor_params.
-[semi.hv, semi.lv] = get_semiconductor_params('SiC_1200V', 'GaN');
+[semi.hv, semi.lv] = get_semiconductor_params(device_hv, device_lv);
 
 % B. Passives
 passives.Rs = 1e6;                 % ohm, snubber resistance
@@ -124,8 +126,8 @@ assignin('base', 'R_cab_l', passives.lv.R_cab); assignin('base', 'L_cab_l', pass
 assignin('base', 'C_bulk_l',passives.lv.C_bulk);
 assignin('base', 'R_s',     passives.Rs);
 
-% Start a fresh per-frequency current plot file
-current_plot_file = fullfile(repo_root, 'results', 'current_plots.pdf');
+% Steady-state check file for this device pair (replaced on each run)
+current_plot_file = fullfile(repo_root, 'results', sprintf('current_plots_%s-%s.pdf', device_hv, device_lv));
 if exist(current_plot_file, 'file'), delete(current_plot_file); end
 
 fprintf('Starting Sweep (Target: %.1f kW)...\n', power.target/1e3);
