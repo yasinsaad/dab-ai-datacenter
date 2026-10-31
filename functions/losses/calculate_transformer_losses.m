@@ -55,6 +55,10 @@ function [P_core, P_cu, P_tr, B_pk, k_fe] = calculate_transformer_losses( ...
 %       P_cu = Ipri_rms^2 * Rac_pri + Isec_rms^2 * Rac_sec
 %
 %    Rac_pri and Rac_sec are taken from the Krismer DAB model.
+%    Ipri_rms and Isec_rms must be the RMS currents in the windings (the
+%    AC link current), not the DC input/output currents.
+%    Limitation: Rac_pri and Rac_sec are fixed; their rise with frequency
+%    (skin and proximity effects) is not modeled.
 %
 % LITERATURE INSPIRATION
 % ---------------------------------------------------------------

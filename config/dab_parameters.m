@@ -62,6 +62,9 @@ trans.beta  = 2.32;                % flux-density exponent
 trans.C_wave = 1.25;               % square-wave correction factor
 
 % Winding AC resistances (Krismer, p. 311)
+% Limitation: Rac1 and Rac2 are fixed values used at every switching
+% frequency. Real AC resistance rises with frequency (skin and proximity
+% effects); that variation is not modeled.
 trans.Rac1 =  149e-3;              % ohm, primary
 trans.Rac2 = 1e-5;                 % ohm, secondary
 

@@ -122,6 +122,19 @@ for i = 1:num_sweep
     I_rms_h = rms(I_ss_h); I_rms_l = rms(I_ss_l);
     I_rms_in = rms(I_ss_in); I_rms_out = rms(I_ss_out);
 
+    % RMS of the AC link current (series inductor and transformer windings).
+    % Each switch carries the link current for exactly half of each period
+    % (50 % duty, no dead time), and the link current is half-wave
+    % symmetric, i(t + T/2) = -i(t). So each half period holds half of the
+    % integral of i^2, and I_link_rms = sqrt(2) * I_switch_rms. This does not
+    % assume a sinusoid. Checked on the 140 kHz SiC-GaN waveform: ratio 1.422
+    % (link current crest factor 1.16, i.e. trapezoidal).
+    % If dead time is added to the model, switches conduct for less than
+    % half a period and this factor no longer holds; log the inductor
+    % current directly instead (as DAB_waveform_model does).
+    I_rms_pri = sqrt(2) * I_rms_h;     % A, primary winding / series inductor
+    I_rms_sec = sqrt(2) * I_rms_l;     % A, secondary winding
+
     % Peak switch currents (= peak of the AC link current), used as the
     % switching-instant current. This is an upper bound; the exact value is
     % the instantaneous current at the commutation moment.
@@ -131,13 +144,18 @@ for i = 1:num_sweep
     % --- 1. Conduction and passive losses ---
     % Conduction: per-switch RMS current, 4 switches per bridge.
     % Cable: 2 cable branches per side, DC currents.
-    % Inductor DC: uses the DC input current. The series inductor carries
-    % the AC link current, whose RMS is sqrt(2) * I_rms_h.
+    % Inductor winding: the inductor carries the AC link current, I_rms_pri.
+    %   FIX (after the TENCON 2026 paper): this used the DC input current
+    %   I_rms_in, which underestimated the loss by (I_rms_pri/I_rms_in)^2,
+    %   about 1.56x at 140 kHz. The saved results in results/data/ and the
+    %   paper's figures were computed before this fix.
+    %   Rdc is the DC resistance only; the inductor's AC winding resistance
+    %   (skin and proximity effects) is not modeled.
     power.loss.conduction = 4*(I_rms_h^2 * semi.hv.Ron) + 4*(I_rms_l^2 * semi.lv.Ron);
     power.loss.cable  = 2*(I_rms_in^2 * passives.hv.R_cab) + 2*(I_rms_out^2 * passives.lv.R_cab);
     power.loss.gateDrive = (4 * semi.hv.Qg * semi.hv.V_dr_on * f_sw_curr) + ...
              (4 * semi.lv.Qg * semi.lv.V_dr_on * f_sw_curr);
-    power.loss.inductorDC = I_rms_in^2 * inductor.Rdc;
+    power.loss.inductorDC = I_rms_pri^2 * inductor.Rdc;
 
     % --- 2. Switching losses (analytical, with ZVS energy + timing check) ---
     % HV side
@@ -160,11 +178,14 @@ for i = 1:num_sweep
     data_loss_body_l(i) = P_body_l;
 
     % --- 4. Transformer losses (core + copper) ---
-    % Copper loss uses the DC input/output currents as winding currents.
-    % The windings carry the AC link current: sqrt(2) * I_rms_h on the
-    % primary and sqrt(2) * I_rms_l on the secondary.
+    % Copper loss uses the winding RMS currents I_rms_pri / I_rms_sec.
+    %   FIX (after the TENCON 2026 paper): this used the DC input/output
+    %   currents I_rms_in / I_rms_out, which underestimated copper loss by
+    %   about 1.56x (primary) and 1.49x (secondary) at 140 kHz. The saved
+    %   results in results/data/ and the paper's figures were computed
+    %   before this fix.
     [P_core, P_cu, P_trans, B_pk, k_fe] = calculate_transformer_losses( ...
-        f_sw_curr, source.Vin, I_rms_in, I_rms_out, ...
+        f_sw_curr, source.Vin, I_rms_pri, I_rms_sec, ...
         trans.coreVolume, trans.coreArea, trans.V1, ...
         trans.Ks, trans.alpha, trans.beta, ...
         trans.Rac1, trans.Rac2, trans.C_wave);

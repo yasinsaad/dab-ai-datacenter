@@ -147,11 +147,14 @@ Main fields of `results` (one entry per frequency):
 | Conduction | 4 · I_rms,switch² · R_on per bridge | `run_frequency_sweep.m` |
 | Cable | 2 · I_rms,DC² · R_cable per side | `run_frequency_sweep.m` |
 | Gate drive | 4 · Q_g · V_drive · f_sw per bridge | `run_frequency_sweep.m` |
-| Inductor DC | I_rms,in² · R_dc (DC input current), R_dc from ETD44 geometry | `get_inductor_params.m` |
+| Inductor winding | I_rms,link² · R_dc, R_dc from ETD44 geometry (AC resistance not modeled) | `get_inductor_params.m` |
 | Switching | Analytical turn-on / turn-off / recovery model (Energies 2022, 15, 8262). Turn-on and recovery loss are zero when ZVS holds (enough inductor energy **and** transition finishes within the dead time) | `calculate_switching_zvs.m` |
 | Body diode | V_f · I · (dead time − transition time) · 4 · f_sw, ZVS cases only | `calculate_body_diode_losses.m` |
-| Transformer | Steinmetz core loss (SIFERRIT N97, E 140/68/40 core) with square-wave factor, plus I²·R_ac copper loss with the DC input/output currents (R_ac from the Krismer DAB model) | `calculate_transformer_losses.m` |
+| Transformer | Steinmetz core loss (SIFERRIT N97, E 140/68/40 core) with square-wave factor, plus I_rms,winding²·R_ac copper loss (R_ac from the Krismer DAB model, fixed with frequency) | `calculate_transformer_losses.m` |
 
 ## Notes
+
+- **Winding current fix (after the TENCON paper).** Transformer copper loss and inductor loss now use the RMS of the AC link current, I_rms,link = √2 · I_rms,switch. Earlier versions used the DC input/output currents, which underestimated these losses (about 1.5× at 140 kHz; efficiency about 0.3 points too high). The data in `results/data/` and the figures in `results/figures/paper/` were produced before the fix and match the published paper. The √2 factor needs 50 % duty with no dead time, which is how the model gates the switches.
+- **R_ac is fixed with frequency.** Skin and proximity effects are not modeled.
 
 - The plot scripts call `set(groot, ...)`, which changes plot defaults for the rest of the MATLAB session.
