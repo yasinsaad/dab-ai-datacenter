@@ -1,12 +1,12 @@
 %% PLOT_SWEEP_RESULTS  Plots for one device pair: efficiency, total loss,
 % loss breakdown, magnetic volume, and volume-efficiency scatter.
 %
-% Called at the end of main/DAB_freq_sweep.m. To plot saved data:
-%   load results/data/SiC-Si_sweep.mat      % defines `results`
+% Called at the end of main/run_frequency_sweep.m. To plot saved data:
+%   load results/data/SiC-Si_sweep_40-150kHz.mat      % defines `results`
 %   run main/plot_sweep_results.m
 %
 % Workspace input:
-%   results : struct from main/DAB_freq_sweep.m
+%   results : struct from main/run_frequency_sweep.m
 %
 % Fig. 4(a)/(b) of the TENCON paper is the loss-breakdown figure from
 % this script, for SiC-GaN and SiC-Si.

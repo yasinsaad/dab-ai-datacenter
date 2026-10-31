@@ -1,4 +1,4 @@
-%% PLOT_STEADY_STATE  Steady-state waveforms (SiC-GaN, 140 kHz) in a 3x2 grid.
+%% PLOT_STEADY_STATE_WAVEFORMS  Steady-state waveforms (SiC-GaN, 140 kHz) in a 3x2 grid.
 %
 % Workspace inputs (loaded from
 % results/data/SiC-GaN_140kHz_steady_state.mat if not already defined):

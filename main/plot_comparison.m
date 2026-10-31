@@ -1,9 +1,9 @@
 %% PLOT_COMPARISON  Compare two sweep results (SiC-Si vs SiC-GaN) on shared axes.
 %
 % Workspace inputs (loaded from results/data/ if not already defined):
-%   results1 : SiC-Si sweep    (results/data/SiC-Si_sweep.mat)
+%   results1 : SiC-Si sweep    (results/data/SiC-Si_sweep_40-150kHz.mat)
 %   results2 : SiC-GaN sweep   (results/data/SiC-GaN_sweep_40-250kHz.mat)
-% Each is a `results` struct saved by main/DAB_freq_sweep.m.
+% Each is a `results` struct saved by main/run_frequency_sweep.m.
 %
 % Produces 5 figures: efficiency (Fig. 2 of the TENCON paper), total loss
 % (Fig. 3), combined loss breakdown (not in the paper; Fig. 4 comes from
@@ -16,7 +16,7 @@
 addpath(fullfile(fileparts(mfilename('fullpath')), '..'));
 repo_root = setup_paths();
 if ~exist('results1', 'var')
-    tmp = load(fullfile(repo_root, 'results', 'data', 'SiC-Si_sweep.mat'), 'results');
+    tmp = load(fullfile(repo_root, 'results', 'data', 'SiC-Si_sweep_40-150kHz.mat'), 'results');
     results1 = tmp.results;
 end
 if ~exist('results2', 'var')

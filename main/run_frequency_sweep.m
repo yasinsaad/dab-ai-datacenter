@@ -1,4 +1,4 @@
-%% DAB_FREQ_SWEEP  Switching-frequency sweep of the 800 V / 48 V DAB converter
+%% RUN_FREQUENCY_SWEEP  Switching-frequency sweep of the 800 V / 48 V DAB converter
 %
 % Runs the Simulink model at each switching frequency, extracts
 % steady-state currents, and computes the analytical loss breakdown,
@@ -13,7 +13,7 @@
 %      switching (with ZVS check), body diode, transformer.
 %   5. Estimate magnetic volume (inductor + transformer).
 %
-% Requires:  MATLAB + Simulink, models/DAB_freq_sweep_sim.slx
+% Requires:  MATLAB + Simulink, models/DAB_sweep_model.slx
 % Outputs (workspace):
 %   results          struct of per-frequency arrays (see "Initialize Data Arrays")
 %   data_loss_body*  body-diode loss per frequency [W]
@@ -33,58 +33,17 @@ addpath(fullfile(fileparts(mfilename('fullpath')), '..'));
 repo_root = setup_paths();
 
 %% --- 1. CONFIGURATION ---
-model_name = 'DAB_freq_sweep_sim';
+model_name = 'DAB_sweep_model';
 device_hv = 'SiC_1200V';           % HV bridge: 'SiC_1200V' (see get_semiconductor_params)
 device_lv = 'GaN';                 % LV bridge: 'GaN' or 'Si_60V'
-power.target = 25000;              % W, nominal output power (25 kW)
-headroom_factor = 1.3;             % Lk is sized for 1.3 x nominal = 32.5 kW
 freq_steps = (40:10:250) * 1e3;    % Hz, sweep points (40-250 kHz in 10 kHz steps, as in the paper)
 num_sweep = length(freq_steps);
 sim_time = 0.3;                    % s, Simulink stop time per point
-max_power = headroom_factor*power.target;
 
 %% --- 2. PARAMETERS ---
-
-% A. Semiconductor profiles (HV bridge, LV bridge).
-%    Dead time is set inside get_semiconductor_params.
-[semi.hv, semi.lv] = get_semiconductor_params(device_hv, device_lv);
-
-% B. Passives
-passives.Rs = 1e6;                 % ohm, snubber resistance
-passives.hv.R_cab = 5e-3;   passives.hv.L_cab = 2e-6;   passives.hv.C_bulk = 470e-6;   % HV cable R [ohm], L [H], DC-link C [F]
-passives.lv.R_cab = 0.1e-3; passives.lv.L_cab = 100e-9; passives.lv.C_bulk = 4e-3;     % LV cable R [ohm], L [H], DC-link C [F]
-
-% C. Transformer
-trans.V1 = 16; trans.V2 = 1; trans.n = trans.V2/trans.V1;   % turns ratio 16:1 (V1 also used as primary turns)
-trans.power = max_power;
-
-% D. Source / load
-source.Vin = 800; source.Vout = 48;     % V
-
-% Magnetizing branch of the Simulink transformer block.
-% Lm and Rm are set very high, so the magnetizing branch is effectively
-% open. Rm is constant (not updated during the sweep).
-trans.Lm = 1e6;                    % H
-trans.Rm = 1e6;                    % ohm
-
-% DC winding resistances for the Simulink transformer block, scaled from
-% the AC resistances below (Krismer DAB model).
-trans.R1 = 0.075;                  % ohm, primary
-trans.R2 = 6e-6;                   % ohm, secondary
-
-% Core geometry for the transformer loss model: E 140/68/40 core
-trans.coreVolume = 5.00045e-3;     % m^3
-trans.coreArea = 1.585e-3;         % m^2
-
-% Steinmetz parameters for SIFERRIT N97, fitted from the datasheet loss curves
-trans.Ks    = 1.96e4;              % core-loss density at 25 kHz, 100 mT
-trans.alpha = 1.15;                % frequency exponent
-trans.beta  = 2.32;                % flux-density exponent
-trans.C_wave = 1.25;               % square-wave correction factor
-
-% Winding AC resistances (Krismer, p. 311)
-trans.Rac1 =  149e-3;              % ohm, primary
-trans.Rac2 = 1e-5;                 % ohm, secondary
+% Power ratings, devices, passives, transformer and the variables the
+% Simulink model reads: see config/dab_parameters.m
+dab_parameters
 
 % --- Initialize Data Arrays ---
 results.freq = zeros(1, num_sweep);            % Hz
@@ -116,16 +75,6 @@ data_loss_body = zeros(1, num_sweep);
 data_loss_body_h = zeros(1, num_sweep);
 data_loss_body_l = zeros(1, num_sweep);
 
-% --- Push parameters to the base workspace for the Simulink model ---
-assignin('base', 'R_on_h', semi.hv.Ron);  assignin('base', 'R_on_l', semi.lv.Ron);
-assignin('base', 'R_d_h',  semi.hv.Rd);   assignin('base', 'R_d_l',  semi.lv.Rd);
-assignin('base', 'V_f_h',  semi.hv.Vf);   assignin('base', 'V_f_l',  semi.lv.Vf);
-assignin('base', 'R_cab_h', passives.hv.R_cab); assignin('base', 'L_cab_h', passives.hv.L_cab);
-assignin('base', 'C_bulk_h',passives.hv.C_bulk);
-assignin('base', 'R_cab_l', passives.lv.R_cab); assignin('base', 'L_cab_l', passives.lv.L_cab);
-assignin('base', 'C_bulk_l',passives.lv.C_bulk);
-assignin('base', 'R_s',     passives.Rs);
-
 % Steady-state check file for this device pair (replaced on each run)
 current_plot_file = fullfile(repo_root, 'results', sprintf('current_plots_%s-%s.pdf', device_hv, device_lv));
 if exist(current_plot_file, 'file'), delete(current_plot_file); end
@@ -135,6 +84,7 @@ fprintf('Starting Sweep (Target: %.1f kW)...\n', power.target/1e3);
 %% --- 3. MAIN SWEEP LOOP ---
 for i = 1:num_sweep
     f_sw_curr = freq_steps(i);     % read by the Simulink model
+    T = 1 / f_sw_curr;             % read by the Simulink model (PWM period, T/1000 sample time)
 
     %% A. Series inductance Lk and its DC resistance
     inductor = get_inductor_params(source, trans, f_sw_curr, max_power);

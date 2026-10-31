@@ -2,7 +2,7 @@
 %
 % Workspace inputs (loaded from results/data/ if not already defined):
 %   results_GaN : SiC-GaN sweep  (results/data/SiC-GaN_sweep_40-250kHz.mat)
-%   results_Si  : SiC-Si sweep   (results/data/SiC-Si_sweep.mat)
+%   results_Si  : SiC-Si sweep   (results/data/SiC-Si_sweep_40-150kHz.mat)
 %
 % Plots every design point colored by switching frequency, and draws the
 % Pareto front (minimum volume, maximum efficiency) for each device pair.
@@ -18,7 +18,7 @@ if ~exist('results_GaN', 'var')
     results_GaN = tmp.results;
 end
 if ~exist('results_Si', 'var')
-    tmp = load(fullfile(repo_root, 'results', 'data', 'SiC-Si_sweep.mat'), 'results');
+    tmp = load(fullfile(repo_root, 'results', 'data', 'SiC-Si_sweep_40-150kHz.mat'), 'results');
     results_Si = tmp.results;
 end
 clear tmp
