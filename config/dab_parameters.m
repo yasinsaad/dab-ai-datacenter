@@ -52,7 +52,7 @@ trans.R1 = 0.075;                  % ohm, primary
 trans.R2 = 6e-6;                   % ohm, secondary
 
 % Core geometry for the transformer loss model: E 140/68/40 core
-trans.coreVolume = 5.00045e-3;     % m^3
+trans.coreVolume = 5.00045e-4;     % m^3, Ve = 500045 mm^3 (TDK B66029G0000X197, E 140/68/40 N97)
 trans.coreArea = 1.585e-3;         % m^2
 
 % Steinmetz parameters for SIFERRIT N97, fitted from the datasheet loss curves
